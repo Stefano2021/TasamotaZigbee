@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tasmota Zigbee Manager</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Sonoff Zigbee Bridge Pro</p>
+          <h1>Tasmota Zigbee Manager</h1>
+        </div>
+        <div id="connectionBadge" class="connection-badge offline" aria-live="polite">
+          <span class="dot"></span>
+          <span id="connectionText">Disconnesso</span>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel config-panel">
+          <h2>1. Seleziona il Tasmota</h2>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="savedAddresses">Indirizzo salvato</label>
+              <select id="savedAddresses">
+                <option value="">-- seleziona --</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="protocol">Protocollo</label>
+              <select id="protocol">
+                <option value="http">HTTP</option>
+                <option value="https">HTTPS</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="ipAddress">IP</label>
+              <input id="ipAddress" type="text" placeholder="192.168.1.100" />
+            </div>
+            <div class="field compact">
+              <label for="port">Porta</label>
+              <input id="port" type="number" min="1" max="65535" value="80" />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="username">Username</label>
+              <input id="username" type="text" placeholder="opzionale" />
+            </div>
+            <div class="field">
+              <label for="password">Password</label>
+              <input id="password" type="password" placeholder="opzionale" />
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button id="connectBtn" class="primary">Connetti</button>
+            <button id="saveAddressBtn" class="secondary">Salva indirizzo</button>
+            <button id="refreshBtn" class="ghost">Aggiorna</button>
+          </div>
+        </section>
+
+        <section class="panel devices-panel">
+          <div class="panel-header">
+            <h2>2. Dispositivi Zigbee</h2>
+            <button id="rescanBtn" class="ghost small">Riscansiona</button>
+          </div>
+          <div id="devicesList" class="card-list empty">Nessun dispositivo trovato.</div>
+        </section>
+
+        <section class="panel groups-panel">
+          <h2>3. Gruppi</h2>
+          <div id="groupsList" class="card-list empty">Nessun gruppo trovato.</div>
+        </section>
+
+        <section class="panel commands-panel">
+          <h2>4. Comandi disponibili</h2>
+
+          <div class="target-selectors">
+            <div class="field">
+              <label for="targetType">Tipo</label>
+              <select id="targetType">
+                <option value="device">Dispositivo</option>
+                <option value="group">Gruppo</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="targetSelection">Target</label>
+              <select id="targetSelection">
+                <option value="">-- seleziona --</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-box">
+              <h3>Power</h3>
+              <button type="button" data-command="Power" data-value="ON">ON</button>
+              <button type="button" data-command="Power" data-value="OFF">OFF</button>
+              <button type="button" data-command="Power" data-value="TOGGLE">TOGGLE</button>
+            </div>
+
+            <div class="command-box">
+              <h3>Luminosità</h3>
+              <button type="button" data-command="Dimmer" data-value="0">0%</button>
+              <button type="button" data-command="Dimmer" data-value="50">50%</button>
+              <button type="button" data-command="Dimmer" data-value="100">100%</button>
+              <input id="brightnessSlider" type="range" min="0" max="100" value="50" />
+            </div>
+
+            <div class="command-box">
+              <h3>Colore</h3>
+              <input id="colorPicker" type="color" value="#ff9900" />
+              <button type="button" data-command="Hue" data-value="0">Rosso</button>
+              <button type="button" data-command="Hue" data-value="120">Verde</button>
+              <button type="button" data-command="Hue" data-value="240">Blu</button>
+            </div>
+
+            <div class="command-box">
+              <h3>Temperatura</h3>
+              <button type="button" data-command="CT" data-value="153">6500K</button>
+              <button type="button" data-command="CT" data-value="350">2700K</button>
+              <input id="tempSlider" type="range" min="153" max="500" value="350" />
+            </div>
+
+            <div class="command-box">
+              <h3>Scene</h3>
+              <button type="button" data-command="Scheme" data-value="0">Colore fisso</button>
+              <button type="button" data-command="Scheme" data-value="1">Wake</button>
+              <button type="button" data-command="Scheme" data-value="2">Relax</button>
+              <button type="button" data-command="Scheme" data-value="3">Spectral</button>
+            </div>
+
+            <div class="command-box wide">
+              <h3>Comando personalizzato</h3>
+              <div class="custom-command-row">
+                <input id="customCommand" type="text" placeholder="es. Power ON oppure Dimmer 25" />
+                <button id="sendCustomBtn" type="button" class="primary">Invia</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel log-panel">
+          <h2>5. Log</h2>
+          <div class="log-tools">
+            <button id="clearLogBtn" type="button" class="ghost small">Cancella log</button>
+          </div>
+          <div id="logOutput" class="log-output">Nessun evento.</div>
+        </section>
+      </main>
+    </div>
+
+    <div id="modal" class="modal hidden" aria-hidden="true">
+      <div class="modal-card">
+        <button id="closeModalBtn" type="button" class="close-button">×</button>
+        <h3 id="modalTitle">Risultato</h3>
+        <pre id="modalBody"></pre>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
