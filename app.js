@@ -129,16 +129,18 @@ function setBaseUrlFromInputs() {
   return `${protocol}://${ip}:${port}`;
 }
 
-async function fetchJson(endpoint, options = {}) {
-  const url = `${state.baseUrl}/${endpoint}`;
-  const response = await fetch(url, {
-    method: options.method || 'GET',
+async function fetchJsonViaProxy(tasmotaUrl, username, password) {
+  const params = new URLSearchParams({
+    url: tasmotaUrl,
+    ...(username && { username }),
+    ...(password && { password })
+  });
+
+  const response = await fetch(`/api/tasmota?${params}`, {
+    method: 'GET',
     headers: {
-      Accept: 'application/json',
-      ...(options.headers || {})
-    },
-    mode: 'cors',
-    cache: 'no-store'
+      'Accept': 'application/json'
+    }
   });
 
   const text = await response.text();
@@ -155,15 +157,6 @@ async function fetchJson(endpoint, options = {}) {
   }
 }
 
-function normalizeHttpAuthHeader() {
-  const username = (els.username.value || '').trim();
-  const password = (els.password.value || '').trim();
-
-  if (!username && !password) return {};
-  const encoded = btoa(`${username}:${password}`);
-  return { Authorization: `Basic ${encoded}` };
-}
-
 async function connectDevice() {
   const baseUrl = setBaseUrlFromInputs();
   if (!baseUrl) {
@@ -174,7 +167,8 @@ async function connectDevice() {
   state.baseUrl = baseUrl;
 
   try {
-    const payload = await fetchJson('cm?cmnd=Status', { headers: normalizeHttpAuthHeader() });
+    const statusUrl = `${baseUrl}/cm?cmnd=Status`;
+    const payload = await fetchJsonViaProxy(statusUrl, els.username.value, els.password.value);
 
     if (!payload || (!payload.Status && !payload.status && !payload.data)) {
       throw new Error('La risposta del dispositivo non contiene dati Tasmota validi.');
@@ -319,15 +313,15 @@ function parseGroupsFromPayload(payload) {
 async function refreshData() {
   if (!state.connected) return;
 
-  const headers = normalizeHttpAuthHeader();
-
   try {
-    const zbStatus = await fetchJson('zb?cmnd=ZbStatus', { headers });
+    const zbStatusUrl = `${state.baseUrl}/zb?cmnd=ZbStatus`;
+    const zbStatus = await fetchJsonViaProxy(zbStatusUrl, els.username.value, els.password.value);
     const devices = parseDevicesFromPayload(zbStatus);
     state.devices = devices;
     renderDevices();
 
-    const groupsPayload = await fetchJson('zb?cmnd=ZbStatus%201', { headers }).catch(() => ({}));
+    const groupsUrl = `${state.baseUrl}/zb?cmnd=ZbStatus%201`;
+    const groupsPayload = await fetchJsonViaProxy(groupsUrl, els.username.value, els.password.value).catch(() => ({}));
     state.groups = parseGroupsFromPayload(groupsPayload);
     renderGroups();
 
@@ -442,19 +436,19 @@ async function sendCommandToTarget(command, value) {
 
   try {
     const commandText = `${command} ${value}`.trim();
-    let endpoint = '';
+    let cmdUrl = '';
 
     if (targetType === 'device') {
-      endpoint = `zb?cmnd=${encodeURIComponent(
+      cmdUrl = `${state.baseUrl}/zb?cmnd=${encodeURIComponent(
         `ZbSend {"Device":"${selectedTarget}","Send":"${commandText}"}`
       )}`;
     } else {
-      endpoint = `zb?cmnd=${encodeURIComponent(
+      cmdUrl = `${state.baseUrl}/zb?cmnd=${encodeURIComponent(
         `ZbSend {"Group":"${selectedTarget}","Send":"${commandText}"}`
       )}`;
     }
 
-    const result = await fetchJson(endpoint, { headers: normalizeHttpAuthHeader() });
+    const result = await fetchJsonViaProxy(cmdUrl, els.username.value, els.password.value);
     addLog(`Comando inviato: ${commandText} a ${targetType} ${selectedTarget}`, 'success');
     showModal('Risultato comando', JSON.stringify(result, null, 2));
     setTimeout(refreshData, 600);
